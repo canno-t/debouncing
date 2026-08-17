@@ -32,10 +32,11 @@ module debounce_tb(
     
     parameter clock_time = 5;
     parameter clk_freq = 1000/(2*clock_time);
-    parameter debounce_time = 5*(clock_time);
+    parameter debounce_time = 40*(clock_time);
     reg [8*20:0] str;
     
     debounce#(.clk_freq(clk_freq), .debounce_time(debounce_time)) dut(.clk(clk), .resn(res), .out(out), .in(in));
+    //debounce2#(.clk_freq(clk_freq), .debounce_time(debounce_time)) dut(.clk(clk), .resn(res), .out(out), .in(in));
     
     task reset();
         begin
@@ -82,7 +83,7 @@ module debounce_tb(
         if(out!=out_ref)begin
             $display("TEST - %s - FAIL, time %t",str, $time);
             #5;
-            $finish;
+           // $finish;
         end 
     end
     parameter short =debounce_time/2;
