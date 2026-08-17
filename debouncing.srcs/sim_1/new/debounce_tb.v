@@ -33,16 +33,41 @@ module debounce_tb(
     parameter clock_time = 5;
     parameter clk_freq = 1000/(2*clock_time);
     parameter debounce_time = 5*(clock_time);
+    reg [8*20:0] str;
     
     debounce#(.clk_freq(clk_freq), .debounce_time(debounce_time)) dut(.clk(clk), .resn(res), .out(out), .in(in));
     
     task reset();
         begin
-            @(negedge clk)
-            res = 0;
+        str = "reset";
+        @(posedge clk)
+        @(negedge clk)
+        res = 0;
+        @(posedge clk)
+        #2
+        res = 1;
+        end
+    endtask
+    
+    task long_signal_change();
+        begin
+            str = "dluga zmiana stanu";
             @(posedge clk)
-            #2
-            res = 1;
+            in = 1;
+            #(debounce_time+1)
+            in = 0;
+            @(posedge clk)
+            in = 1;
+        end 
+    endtask
+    
+    task short_signal_change();
+        begin
+            str = "krotka zmiana stanu";
+            @(posedge clk)
+            in = 0;
+            #(debounce_time/2)
+            in = 1;
         end
     endtask
     
@@ -55,10 +80,10 @@ module debounce_tb(
     
     always @(negedge clk or posedge out or negedge out) begin//co cykl zegara plus przy jakiejkolwiek zmianie sygnalu wyjsciowego
         if(out!=out_ref)begin
-            $display("TEST - FAIL, time %t", $time);
+            $display("TEST - %s - FAIL, time %t",str, $time);
+            #5;
+            $finish;
         end 
-        else
-        $display("TEST - SUCCESS");
     end
     parameter short =debounce_time/2;
     //generowanie sygnałów referencyjnych
@@ -66,30 +91,29 @@ module debounce_tb(
     initial begin
         //reset
         @(posedge clk)
-        @(negedge clk)
-        res = 0;
         @(posedge clk)
         out_ref = 0;
-        #2
-        res = 1;
         @(posedge clk)
-        in = 1;
         #(debounce_time+1)
-        in = 0;
         @(posedge clk)
-        in = 1;
         @(posedge clk)
         out_ref = 1;
-        in = 0;
         #(debounce_time/2)
-        in = 1;
         @(posedge clk)
         @(posedge clk)
         out_ref = 1;
         #20
+        $display("SUKCES - modul poprawnie przeszedl testy");
         $finish;
         
     end 
+    
+    //blok przeprowadzanych testów
+    initial begin
+        reset();
+        long_signal_change();
+        short_signal_change();
+    end
     
     
     
